@@ -17,3 +17,7 @@ RemoteCommand
 .vs
 *.ambe
 GitVersion.h
+CMakeCache.txt
+cmake/Makefile
+cmake/CMakeFiles
+cmake/cmake_install.cmake
