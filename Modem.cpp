@@ -104,6 +104,8 @@ m_port(port),
 m_dmrColorCode(0U),
 m_ysfLoDev(false),
 m_ysfTXHang(4U),
+m_p25TXHang(5U),
+m_nxdnTXHang(5U),
 m_duplex(duplex),
 m_rxInvert(rxInvert),
 m_txInvert(txInvert),
@@ -178,6 +180,7 @@ m_fmCallsignHighLevel(35.0F),
 m_fmCallsignLowLevel(15.0F),
 m_fmCallsignAtStart(true),
 m_fmCallsignAtEnd(true),
+m_fmCallsignAtLatch(true),
 m_fmRfAck("K"),
 m_fmAckSpeed(20U),
 m_fmAckFrequency(1750U),
@@ -187,11 +190,13 @@ m_fmAckLevel(80.0F),
 m_fmTimeout(120U),
 m_fmTimeoutLevel(80.0F),
 m_fmCtcssFrequency(88.4F),
-m_fmCtcssThreshold(25U),
+m_fmCtcssHighThreshold(30U),
+m_fmCtcssLowThreshold(20U),
 m_fmCtcssLevel(10.0F),
 m_fmKerchunkTime(0U),
 m_fmHangTime(5U),
 m_fmUseCOS(true),
+m_fmCOSInvert(false),
 m_fmRFAudioBoost(1U),
 m_fmMaxDevLevel(90.0F)
 {
@@ -260,6 +265,16 @@ void CModem::setYSFParams(bool loDev, unsigned int txHang)
 {
 	m_ysfLoDev  = loDev;
 	m_ysfTXHang = txHang;
+}
+
+void CModem::setP25Params(unsigned int txHang)
+{
+	m_p25TXHang = txHang;
+}
+
+void CModem::setNXDNParams(unsigned int txHang)
+{
+	m_nxdnTXHang = txHang;
 }
 
 void CModem::setTransparentDataParams(unsigned int sendFrameType)
@@ -1491,6 +1506,11 @@ bool CModem::readStatus()
 	return m_serial->write(buffer, 3U) == 3;
 }
 
+bool CModem::writeConfig()
+{
+	return setConfig();
+}
+
 bool CModem::setConfig()
 {
 	assert(m_serial != NULL);
@@ -1499,7 +1519,7 @@ bool CModem::setConfig()
 
 	buffer[0U] = MMDVM_FRAME_START;
 
-	buffer[1U] = 22U;
+	buffer[1U] = 24U;
 
 	buffer[2U] = MMDVM_SET_CONFIG;
 
@@ -1563,10 +1583,14 @@ bool CModem::setConfig()
 
 	buffer[21U] = (unsigned char)(m_fmTXLevel * 2.55F + 0.5F);
 
-	// CUtils::dump(1U, "Written", buffer, 22U);
+	buffer[22U] = (unsigned char)m_p25TXHang;
 
-	int ret = m_serial->write(buffer, 22U);
-	if (ret != 22)
+	buffer[23U] = (unsigned char)m_nxdnTXHang;
+
+	// CUtils::dump(1U, "Written", buffer, 24U);
+
+	int ret = m_serial->write(buffer, 24U);
+	if (ret != 24)
 		return false;
 
 	unsigned int count = 0U;
@@ -1882,7 +1906,7 @@ bool CModem::writeDMRShortLC(const unsigned char* lc)
 	return m_serial->write(buffer, 12U) == 12;
 }
 
-void CModem::setFMCallsignParams(const std::string& callsign, unsigned int callsignSpeed, unsigned int callsignFrequency, unsigned int callsignTime, unsigned int callsignHoldoff, float callsignHighLevel, float callsignLowLevel, bool callsignAtStart, bool callsignAtEnd)
+void CModem::setFMCallsignParams(const std::string& callsign, unsigned int callsignSpeed, unsigned int callsignFrequency, unsigned int callsignTime, unsigned int callsignHoldoff, float callsignHighLevel, float callsignLowLevel, bool callsignAtStart, bool callsignAtEnd, bool callsignAtLatch)
 {
 	m_fmCallsign          = callsign;
 	m_fmCallsignSpeed     = callsignSpeed;
@@ -1893,6 +1917,7 @@ void CModem::setFMCallsignParams(const std::string& callsign, unsigned int calls
 	m_fmCallsignLowLevel  = callsignLowLevel;
 	m_fmCallsignAtStart   = callsignAtStart;
 	m_fmCallsignAtEnd     = callsignAtEnd;
+	m_fmCallsignAtLatch   = callsignAtLatch;
 }
 
 void CModem::setFMAckParams(const std::string& rfAck, unsigned int ackSpeed, unsigned int ackFrequency, unsigned int ackMinTime, unsigned int ackDelay, float ackLevel)
@@ -1905,19 +1930,22 @@ void CModem::setFMAckParams(const std::string& rfAck, unsigned int ackSpeed, uns
 	m_fmAckLevel     = ackLevel;
 }
 
-void CModem::setFMMiscParams(unsigned int timeout, float timeoutLevel, float ctcssFrequency, unsigned int ctcssThreshold, float ctcssLevel, unsigned int kerchunkTime, unsigned int hangTime, bool useCOS, unsigned int rfAudioBoost, float maxDevLevel)
+void CModem::setFMMiscParams(unsigned int timeout, float timeoutLevel, float ctcssFrequency, unsigned int ctcssHighThreshold, unsigned int ctcssLowThreshold, float ctcssLevel, unsigned int kerchunkTime, unsigned int hangTime, bool useCOS, bool cosInvert, unsigned int rfAudioBoost, float maxDevLevel)
 {
 	m_fmTimeout      = timeout;
 	m_fmTimeoutLevel = timeoutLevel;
 
-	m_fmCtcssFrequency = ctcssFrequency;
-	m_fmCtcssThreshold = ctcssThreshold;
-	m_fmCtcssLevel     = ctcssLevel;
+	m_fmCtcssFrequency     = ctcssFrequency;
+	m_fmCtcssHighThreshold = ctcssHighThreshold;
+	m_fmCtcssLowThreshold  = ctcssLowThreshold;
+	m_fmCtcssLevel         = ctcssLevel;
 
 	m_fmKerchunkTime = kerchunkTime;
 	m_fmHangTime     = hangTime;
 
 	m_fmUseCOS       = useCOS;
+	m_fmCOSInvert    = cosInvert;
+
 	m_fmRFAudioBoost = rfAudioBoost;
 	m_fmMaxDevLevel  = maxDevLevel;
 }
@@ -1946,6 +1974,8 @@ bool CModem::setFMCallsignParams()
 		buffer[9U] |= 0x01U;
 	if (m_fmCallsignAtEnd)
 		buffer[9U] |= 0x02U;
+	if (m_fmCallsignAtLatch)
+		buffer[9U] |= 0x04U;
 
 	for (unsigned int i = 0U; i < m_fmCallsign.size(); i++)
 		buffer[10U + i] = m_fmCallsign.at(i);
@@ -2040,33 +2070,36 @@ bool CModem::setFMMiscParams()
 	unsigned char buffer[20U];
 
 	buffer[0U] = MMDVM_FRAME_START;
-	buffer[1U] = 14U;
+	buffer[1U] = 15U;
 	buffer[2U] = MMDVM_FM_PARAMS3;
 
 	buffer[3U] = m_fmTimeout / 5U;
 	buffer[4U] = (unsigned char)(m_fmTimeoutLevel * 2.55F + 0.5F);
 
 	buffer[5U] = (unsigned char)m_fmCtcssFrequency;
-	buffer[6U] = m_fmCtcssThreshold;
-	buffer[7U] = (unsigned char)(m_fmCtcssLevel * 2.55F + 0.5F);
+	buffer[6U] = m_fmCtcssHighThreshold;
+	buffer[7U] = m_fmCtcssLowThreshold;
+	buffer[8U] = (unsigned char)(m_fmCtcssLevel * 2.55F + 0.5F);
 
-	buffer[8U] = m_fmKerchunkTime;
-	buffer[9U] = m_fmHangTime;
+	buffer[9U]  = m_fmKerchunkTime;
+	buffer[10U] = m_fmHangTime;
 
-	buffer[10U] = 0x00U;
+	buffer[11U] = 0x00U;
 	if (m_fmUseCOS)
-		buffer[10U] |= 0x01U;
+		buffer[11U] |= 0x01U;
+	if (m_fmCOSInvert)
+		buffer[11U] |= 0x02U;
 
-	buffer[11U] = m_fmRFAudioBoost;
+	buffer[12U] = m_fmRFAudioBoost;
 
-	buffer[12U] = (unsigned char)(m_fmMaxDevLevel * 2.55F + 0.5F);
+	buffer[13U] = (unsigned char)(m_fmMaxDevLevel * 2.55F + 0.5F);
 
-	buffer[13U] = (unsigned char)(m_rxLevel * 2.55F + 0.5F);
+	buffer[14U] = (unsigned char)(m_rxLevel * 2.55F + 0.5F);
 
-	// CUtils::dump(1U, "Written", buffer, 14U);
+	// CUtils::dump(1U, "Written", buffer, 15U);
 
-	int ret = m_serial->write(buffer, 14U);
-	if (ret != 14)
+	int ret = m_serial->write(buffer, 15U);
+	if (ret != 15)
 		return false;
 
 	unsigned int count = 0U;

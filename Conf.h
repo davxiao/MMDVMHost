@@ -155,6 +155,7 @@ public:
   bool         getP25SelfOnly() const;
   bool         getP25OverrideUID() const;
   bool         getP25RemoteGateway() const;
+  unsigned int getP25TXHang() const;
   unsigned int getP25ModeHang() const;
 
   // The NXDN section
@@ -163,6 +164,7 @@ public:
   unsigned int getNXDNRAN() const;
   bool         getNXDNSelfOnly() const;
   bool         getNXDNRemoteGateway() const;
+  unsigned int getNXDNTXHang() const;
   unsigned int getNXDNModeHang() const;
 
   // The POCSAG section
@@ -180,6 +182,7 @@ public:
   float        getFMCallsignLowLevel() const;
   bool         getFMCallsignAtStart() const;
   bool         getFMCallsignAtEnd() const;
+  bool         getFMCallsignAtLatch() const;
   std::string  getFMRFAck() const;
   std::string  getFMExtAck() const;
   unsigned int getFMAckSpeed() const;
@@ -190,11 +193,13 @@ public:
   unsigned int getFMTimeout() const;
   float        getFMTimeoutLevel() const;
   float        getFMCTCSSFrequency() const;
-  unsigned int getFMCTCSSThreshold() const;
+  unsigned int getFMCTCSSHighThreshold() const;
+  unsigned int getFMCTCSSLowThreshold() const;
   float        getFMCTCSSLevel() const;
   unsigned int getFMKerchunkTime() const;
   unsigned int getFMHangTime() const;
   bool         getFMUseCOS() const;
+  bool         getFMCOSInvert() const;
   unsigned int getFMRFAudioBoost() const;
   float        getFMMaxDevLevel() const;
   unsigned int getFMExtAudioBoost() const;
@@ -423,6 +428,7 @@ private:
   bool         m_p25SelfOnly;
   bool         m_p25OverrideUID;
   bool         m_p25RemoteGateway;
+  unsigned int m_p25TXHang;
   unsigned int m_p25ModeHang;
 
   bool         m_nxdnEnabled;
@@ -430,6 +436,7 @@ private:
   unsigned int m_nxdnRAN;
   bool         m_nxdnSelfOnly;
   bool         m_nxdnRemoteGateway;
+  unsigned int m_nxdnTXHang;
   unsigned int m_nxdnModeHang;
 
   bool         m_pocsagEnabled;
@@ -445,6 +452,7 @@ private:
   float        m_fmCallsignLowLevel;
   bool         m_fmCallsignAtStart;
   bool         m_fmCallsignAtEnd;
+  bool         m_fmCallsignAtLatch;
   std::string  m_fmRFAck;
   std::string  m_fmExtAck;
   unsigned int m_fmAckSpeed;
@@ -455,11 +463,13 @@ private:
   unsigned int m_fmTimeout;
   float        m_fmTimeoutLevel;
   float        m_fmCTCSSFrequency;
-  unsigned int m_fmCTCSSThreshold;
+  unsigned int m_fmCTCSSHighThreshold;
+  unsigned int m_fmCTCSSLowThreshold;
   float        m_fmCTCSSLevel;
   unsigned int m_fmKerchunkTime;
   unsigned int m_fmHangTime;
   bool         m_fmUseCOS;
+  bool         m_fmCOSInvert;
   unsigned int m_fmRFAudioBoost;
   float        m_fmMaxDevLevel;
   unsigned int m_fmExtAudioBoost;

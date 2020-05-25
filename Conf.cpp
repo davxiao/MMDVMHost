@@ -163,12 +163,14 @@ m_p25NAC(0x293U),
 m_p25SelfOnly(false),
 m_p25OverrideUID(false),
 m_p25RemoteGateway(false),
+m_p25TXHang(5U),
 m_p25ModeHang(10U),
 m_nxdnEnabled(false),
 m_nxdnId(0U),
 m_nxdnRAN(1U),
 m_nxdnSelfOnly(false),
 m_nxdnRemoteGateway(false),
+m_nxdnTXHang(5U),
 m_nxdnModeHang(10U),
 m_pocsagEnabled(false),
 m_pocsagFrequency(0U),
@@ -182,6 +184,7 @@ m_fmCallsignHighLevel(35.0F),
 m_fmCallsignLowLevel(15.0F),
 m_fmCallsignAtStart(true),
 m_fmCallsignAtEnd(true),
+m_fmCallsignAtLatch(true),
 m_fmRFAck("K"),
 m_fmExtAck("N"),
 m_fmAckSpeed(20U),
@@ -192,11 +195,13 @@ m_fmAckLevel(80.0F),
 m_fmTimeout(180U),
 m_fmTimeoutLevel(80.0F),
 m_fmCTCSSFrequency(88.6F),
-m_fmCTCSSThreshold(40U),
+m_fmCTCSSHighThreshold(30U),
+m_fmCTCSSLowThreshold(20U),
 m_fmCTCSSLevel(2.0F),
 m_fmKerchunkTime(0U),
 m_fmHangTime(7U),
 m_fmUseCOS(true),
+m_fmCOSInvert(false),
 m_fmRFAudioBoost(1U),
 m_fmMaxDevLevel(90.0F),
 m_fmExtAudioBoost(1U),
@@ -671,6 +676,8 @@ bool CConf::read()
 			m_p25SelfOnly = ::atoi(value) == 1;
 		else if (::strcmp(key, "RemoteGateway") == 0)
 			m_p25RemoteGateway = ::atoi(value) == 1;
+		else if (::strcmp(key, "TXHang") == 0)
+			m_p25TXHang = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "ModeHang") == 0)
 			m_p25ModeHang = (unsigned int)::atoi(value);
 	} else if (section == SECTION_NXDN) {
@@ -684,6 +691,8 @@ bool CConf::read()
 			m_nxdnSelfOnly = ::atoi(value) == 1;
 		else if (::strcmp(key, "RemoteGateway") == 0)
 			m_nxdnRemoteGateway = ::atoi(value) == 1;
+		else if (::strcmp(key, "TXHang") == 0)
+			m_nxdnTXHang = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "ModeHang") == 0)
 			m_nxdnModeHang = (unsigned int)::atoi(value);
 	} else if (section == SECTION_POCSAG) {
@@ -716,6 +725,8 @@ bool CConf::read()
 		  m_fmCallsignAtStart = ::atoi(value) == 1;
 	  else if (::strcmp(key, "CallsignAtEnd") == 0)
 		  m_fmCallsignAtEnd = ::atoi(value) == 1;
+	  else if (::strcmp(key, "CallsignAtLatch") == 0)
+		  m_fmCallsignAtLatch = ::atoi(value) == 1;
 	  else if (::strcmp(key, "RFAck") == 0) {
 			// Convert the ack to upper case
 			for (unsigned int i = 0U; value[i] != 0; i++)
@@ -743,7 +754,11 @@ bool CConf::read()
 		else if (::strcmp(key, "CTCSSFrequency") == 0)
 			m_fmCTCSSFrequency = float(::atof(value));
 		else if (::strcmp(key, "CTCSSThreshold") == 0)
-			m_fmCTCSSThreshold = (unsigned int)::atoi(value);
+			m_fmCTCSSHighThreshold = m_fmCTCSSLowThreshold = (unsigned int)::atoi(value);
+		else if (::strcmp(key, "CTCSSHighThreshold") == 0)
+			m_fmCTCSSHighThreshold = (unsigned int)::atoi(value);
+		else if (::strcmp(key, "CTCSSLowThreshold") == 0)
+			m_fmCTCSSLowThreshold = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "CTCSSLevel") == 0)
 			m_fmCTCSSLevel = float(::atof(value));
 		else if (::strcmp(key, "KerchunkTime") == 0)
@@ -752,6 +767,8 @@ bool CConf::read()
 			m_fmHangTime = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "UseCOS") == 0)
 			m_fmUseCOS = ::atoi(value) == 1;
+		else if (::strcmp(key, "COSInvert") == 0)
+			m_fmCOSInvert = ::atoi(value) == 1;
 		else if (::strcmp(key, "RFAudioBoost") == 0)
 			m_fmRFAudioBoost = (unsigned int)::atoi(value);
 		else if (::strcmp(key, "MaxDevLevel") == 0)
@@ -1450,6 +1467,11 @@ bool CConf::getP25RemoteGateway() const
 	return m_p25RemoteGateway;
 }
 
+unsigned int CConf::getP25TXHang() const
+{
+	return m_p25TXHang;
+}
+
 unsigned int CConf::getP25ModeHang() const
 {
 	return m_p25ModeHang;
@@ -1478,6 +1500,11 @@ bool CConf::getNXDNSelfOnly() const
 bool CConf::getNXDNRemoteGateway() const
 {
 	return m_nxdnRemoteGateway;
+}
+
+unsigned int CConf::getNXDNTXHang() const
+{
+	return m_nxdnTXHang;
 }
 
 unsigned int CConf::getNXDNModeHang() const
@@ -1545,6 +1572,11 @@ bool CConf::getFMCallsignAtEnd() const
 	return m_fmCallsignAtEnd;
 }
 
+bool CConf::getFMCallsignAtLatch() const
+{
+	return m_fmCallsignAtLatch;
+}
+
 std::string CConf::getFMRFAck() const
 {
 	return m_fmRFAck;
@@ -1595,9 +1627,14 @@ float CConf::getFMCTCSSFrequency() const
 	return m_fmCTCSSFrequency;
 }
 
-unsigned int CConf::getFMCTCSSThreshold() const
+unsigned int CConf::getFMCTCSSHighThreshold() const
 {
-	return m_fmCTCSSThreshold;
+	return m_fmCTCSSHighThreshold;
+}
+
+unsigned int CConf::getFMCTCSSLowThreshold() const
+{
+	return m_fmCTCSSLowThreshold;
 }
 
 float CConf::getFMCTCSSLevel() const
@@ -1618,6 +1655,11 @@ unsigned int CConf::getFMHangTime() const
 bool CConf::getFMUseCOS() const
 {
 	return m_fmUseCOS;
+}
+
+bool CConf::getFMCOSInvert() const
+{
+	return m_fmCOSInvert;
 }
 
 unsigned int CConf::getFMRFAudioBoost() const
