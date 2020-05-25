@@ -179,6 +179,7 @@ m_displayLogoScreensaver(displayLogoScreensaver),
 m_slot1Enabled(slot1Enabled),
 m_slot2Enabled(slot2Enabled),
 m_ipaddress(),
+m_inetip(),
 m_display()
 {
 }
@@ -256,6 +257,10 @@ void COLED::setIdleInt()
         m_network = new CNetworkInfo;
         m_network->getNetworkInterface(info);
         m_ipaddress = (char*)info;
+
+        info[0]=0;
+        m_network->getInetIp(info);
+        m_inetip = (char*)info;
         delete m_network;
 
         networkInfoInitialized = true;
@@ -396,6 +401,12 @@ void COLED::writeDMRInt(unsigned int slotNo,const std::string& src,bool group,co
         m_display.printf("Slot: %i %s %s%s",slotNo,type,group ? "TG: " : "",dst.c_str());
     }
 
+    // Since OLED space is limited, show inetip only when it is operating on single slot
+    if (!(m_slot1Enabled && m_slot2Enabled)) {
+        m_display.fillRect(0,OLED_LINE5,m_display.width(),m_display.height(),BLACK);
+        m_display.setCursor(0,OLED_LINE5);
+        m_display.printf("%s",m_inetip.c_str());
+    }
     m_display.fillRect(0,OLED_LINE6,m_display.width(),20,BLACK);
     m_display.setCursor(0,OLED_LINE6);
     m_display.printf("%s",m_ipaddress.c_str());
@@ -427,6 +438,12 @@ void COLED::clearDMRInt(unsigned int slotNo)
         m_display.printf("Slot: %i Listening",slotNo);
     }
 
+    // Since OLED space is limited, show inetip only when it is operating on single slot
+    if (!(m_slot1Enabled && m_slot2Enabled)) {
+        m_display.fillRect(0,OLED_LINE5,m_display.width(),m_display.height(),BLACK);
+        m_display.setCursor(0,OLED_LINE5);
+        m_display.printf("%s",m_inetip.c_str());
+    }
     m_display.fillRect(0, OLED_LINE6, m_display.width(), 20, BLACK);
     m_display.setCursor(0,OLED_LINE6);
     m_display.printf("%s",m_ipaddress.c_str());

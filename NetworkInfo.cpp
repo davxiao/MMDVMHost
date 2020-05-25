@@ -24,7 +24,7 @@
 #include <cstring>
 #include <ctime>
 #include <clocale>
-
+#include <cstdlib>
 #include <sys/types.h>
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <ifaddrs.h>
@@ -220,4 +220,29 @@ void CNetworkInfo::getNetworkInterface(unsigned char* info)
 
 	LogInfo("    IP to show: %s", info);
 #endif
+}
+
+void CNetworkInfo::getInetIp(unsigned char* info)
+{
+     LogInfo("CNetworkInfo::getINetIp Info");
+
+     ::strcpy((char*)info, "(inet addr unkwn)");
+
+    char buffer[128];
+    std::string result = "";
+    FILE* pipe = popen("exec curl -s https://api.ipify.org", "r");
+    if (!pipe) return;
+    try {
+        while (fgets(buffer, sizeof buffer, pipe) != NULL) {
+            result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        return;
+    }
+    pclose(pipe);
+
+    LogInfo("    Inet IP to show: %s", result.empty() ? (char*)info : result.c_str());
+    if (!result.empty())
+        ::sprintf((char*)info, "inet:%s", result.c_str());
 }

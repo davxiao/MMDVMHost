@@ -25,7 +25,7 @@ public:
 	~CNetworkInfo();
 
 	void getNetworkInterface(unsigned char* info);
-
+    void getInetIp(unsigned char* info);
 private:	
 };
 

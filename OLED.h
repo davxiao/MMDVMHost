@@ -88,6 +88,7 @@ private:
   bool          m_slot1Enabled;
   bool          m_slot2Enabled;
   std::string   m_ipaddress;
+  std::string   m_inetip;
   ArduiPi_OLED  m_display;
 
   void OLED_statusbar();
